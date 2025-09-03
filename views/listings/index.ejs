@@ -1,0 +1,205 @@
+<% layout("/layouts/boilerplate") %>
+
+<div id="filters">
+  <div class="filter" data-category="Trending">
+    <div><i class="fa-solid fa-fire"></i></div>
+    <p>Trending</p>
+  </div>
+  <div class="filter" data-category="Rooms">
+    <div><i class="fa-solid fa-bed"></i></div>
+    <p>Rooms</p>
+  </div>
+  <div class="filter" data-category="Iconic Cities">
+    <div><i class="fa-solid fa-mountain-city"></i></div>
+    <p>Iconic Cities</p>
+  </div>
+  <div class="filter" data-category="Mountain">
+    <div><i class="fa-solid fa-mountain"></i></div>
+    <p>Mountain</p>
+  </div>
+  <div class="filter" data-category="Castles">
+    <div><i class="fa-brands fa-fort-awesome"></i></div>
+    <p>Castles</p>
+  </div>
+  <div class="filter" data-category="Amazing Pools">
+    <div><i class="fa-solid fa-person-swimming"></i></div>
+    <p>Amazing Pools</p>
+  </div>
+  <div class="filter" data-category="Camping">
+    <div><i class="fa-solid fa-campground"></i></div>
+    <p>Camping</p>
+  </div>
+  <div class="filter" data-category="Farms">
+    <div><i class="fa-solid fa-cow"></i></div>
+    <p>Farms</p>
+  </div>
+  <div class="filter" data-category="Arctic">
+    <div><i class="fa-regular fa-snowflake"></i></div>
+    <p>Arctic</p>
+  </div>
+  <div class="filter" data-category="Domes">
+    <div><i class="fa-solid fa-igloo"></i></div>
+    <p>Domes</p>
+  </div>
+  <div class="filter" data-category="Boats">
+    <div><i class="fa-solid fa-ship"></i></div>
+    <p>Boats</p>
+  </div>
+  <div class="tax-toggle">
+    <div class="form-check-reverse form-switch">
+      <input
+        class="form-check-input"
+        type="checkbox"
+        role="switch"
+        id="switchCheckDefault"
+      />
+      <label class="form-check-label" for="switchCheckDefault"
+        >Display total after taxes</label
+      >
+    </div>
+  </div>
+</div>
+<div class="row row-cols-lg-3 row-cols-md-2 row-cols-sm-1 mt-3">
+  <% if (allListings.length === 0) { %>
+  <div
+    class="d-flex justify-content-center align-items-center w-100"
+    style="min-height: 60vh"
+  >
+    <div class="text-center">
+      <% if (queryParams.search && queryParams.category) { %>
+      <h4 class="text-muted">
+        No listings found for "<%= queryParams.search %>" in category "<%=
+        queryParams.category %>".
+      </h4>
+      <% } else if (queryParams.search) { %>
+      <h4 class="text-muted">
+        No listings match your search for "<%= queryParams.search %>".
+      </h4>
+      <% } else if (queryParams.category) { %>
+      <h4 class="text-muted">
+        No listings found in category "<%= queryParams.category %>".
+      </h4>
+      <% } else { %>
+      <h4 class="text-muted">No listings available at the moment.</h4>
+      <% } %>
+    </div>
+  </div>
+  <% } else { %>
+
+  <% for (let listing of allListings) { %>
+  <a href="/listings/<%= listing._id %>" class="listing-link">
+    <div class="card listing-card">
+      <img
+        src="<%= listing.image.url %>"
+        class="card-img-top"
+        alt="listing_image"
+        style="height: 20rem"
+      />
+      <div class="card-img-overlay"></div>
+      <div class="card-body">
+        <p class="card-text">
+          <b><%= listing.title %></b> <br />
+          &#8377;<%= listing.price.toLocaleString("en-IN") %>/night
+          <i class="tax-info"> &nbsp; &nbsp; +18% GST</i>
+        </p>
+      </div>
+    </div>
+  </a>
+  <% } %>
+  <% } %>
+</div>
+
+<script>
+  // --- TAX TOGGLE LOGIC ---
+  const taxSwitch = document.getElementById('switchCheckDefault');
+  taxSwitch.addEventListener('click', () => {
+    const taxInfo = document.getElementsByClassName('tax-info');
+    for (let info of taxInfo) {
+      info.style.display = info.style.display !== 'inline' ? 'inline' : 'none';
+    }
+  });
+
+  // --- GET FORM INPUTS ---
+  const searchForm = document.querySelector('form[role="search"]');
+  const searchInput = searchForm.querySelector('input[name="search"]');
+  const categoryInput = searchForm.querySelector('input[name="category"]');
+
+  // --- CLEAR SEARCH ON EMPTY ---
+  searchInput.addEventListener('input', () => {
+    if (!searchInput.value.trim()) {
+      const urlParams = new URLSearchParams(window.location.search);
+      urlParams.delete('search');
+      const category = urlParams.get('category');
+      let newUrl = window.location.pathname;
+      if (category) {
+        newUrl += '?category=' + encodeURIComponent(category);
+      }
+      window.location.href = newUrl;
+    }
+  });
+
+  // --- SUBMIT FORM CLEANLY ---
+  searchForm.addEventListener('submit', (e) => {
+    e.preventDefault(); // prevent default submit
+
+    const params = new URLSearchParams();
+
+    if (searchInput.value.trim()) {
+      params.set('search', searchInput.value.trim());
+    }
+    if (categoryInput.value.trim()) {
+      params.set('category', categoryInput.value.trim());
+    }
+
+    const queryString = params.toString();
+    const url = queryString
+      ? `${window.location.pathname}?${queryString}`
+      : window.location.pathname;
+    window.location.href = url;
+  });
+
+  // --- FILTER HIGHLIGHTING & CLICK ---
+  const urlParams = new URLSearchParams(window.location.search);
+  let activeCategory = urlParams.get('category');
+
+  document.querySelectorAll('.filter').forEach((filter) => {
+    const category = filter.getAttribute('data-category');
+
+    // Highlight active category
+    if (category === activeCategory) {
+      filter.classList.add('active');
+      categoryInput.value = category;
+    } else {
+      filter.classList.remove('active');
+    }
+
+    filter.addEventListener('click', () => {
+      if (category === activeCategory) {
+        // Remove filter
+        activeCategory = null;
+        filter.classList.remove('active');
+        categoryInput.value = '';
+      } else {
+        // Set new filter
+        activeCategory = category;
+        document
+          .querySelectorAll('.filter')
+          .forEach((f) => f.classList.remove('active'));
+        filter.classList.add('active');
+        categoryInput.value = category;
+      }
+
+      // Build new URL
+      const params = new URLSearchParams();
+      if (searchInput.value.trim())
+        params.set('search', searchInput.value.trim());
+      if (activeCategory) params.set('category', activeCategory);
+
+      const queryString = params.toString();
+      const url = queryString
+        ? `${window.location.pathname}?${queryString}`
+        : window.location.pathname;
+      window.location.href = url;
+    });
+  });
+</script>
